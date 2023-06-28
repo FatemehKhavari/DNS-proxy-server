@@ -1,3 +1,4 @@
+import ipaddress
 import socket
 import json
 import socket
@@ -35,8 +36,11 @@ def send_dns_request(domain,dns_query_type):
                 sock.close()
     
 
-def process_dns_request(domain, client_address):
-    
+def process_dns_request(data, client_address):
+    #domain = data.decode().strip()
+    dns_query_type = data[-8:] 
+    dns_query_type = dns_query_type[1:3]
+    domain = data
     print(f"Received DNS request for domain: {domain}")
 
     cache_result = check_cache(domain)
@@ -44,8 +48,29 @@ def process_dns_request(domain, client_address):
         ip_address = cache_result.decode()
         print(f"Found in cache: {ip_address}")
     else:
-        dns_response = send_dns_request(domain).encode()
+        dns_response = send_dns_request(domain,dns_query_type).encode()
 
+        print("Dns response : ")
+        print(dns_response)
+        
+        if dns_response:
+            if dns_query_type == b'01':  
+                ip_address = socket.gethostbyname(dns_response)
+                print(f"Resolved IP address from external DNS: {ip_address}")
+                save_cache(domain, ip_address) 
+            elif dns_query_type == b'28':  
+                ipv4_address = socket.gethostbyname(dns_response)
+                ip_address = ipaddress.IPv6Address('2001::' + ipv4_address).compressed
+                print(f"Resolved IPv6 address from external DNS: {ip_address}")
+                save_cache(domain, ip_address)  
+
+            else:
+                ip_address = 'Unsupported Query Type'
+                print("Unsupported DNS query type.")
+        else:
+            ip_address = 'No response from external DNS servers'
+            print("No response from external DNS servers.")
+        
         response_data = ip_address.encode()
         server_socket.sendto(response_data, client_address)
 
