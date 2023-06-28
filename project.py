@@ -24,7 +24,6 @@ def send_dns_request(domain,dns_query_type):
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.settimeout(5)
             sock.connect((dns_server, 53))
-            sock.sendto(packed_data, (dns_server, 53))
             print(domain)
             ip = socket.gethostbyname(domain)
             response=ip
@@ -37,10 +36,13 @@ def send_dns_request(domain,dns_query_type):
     
 
 def process_dns_request(data, client_address):
-    #domain = data.decode().strip()
     dns_query_type = data[-8:] 
     dns_query_type = dns_query_type[1:3]
-    domain = data
+    data = data[13:]
+    lenght = len(data) - 13 + 1
+    data2 = data[0:lenght]
+    data1 = b'.' + data[-11:-8]
+    domain =data2+data1
     print(f"Received DNS request for domain: {domain}")
 
     cache_result = check_cache(domain)
