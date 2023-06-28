@@ -1,7 +1,18 @@
 import socket
+import json
+import socket
+
+CONFIG_FILE = 'config.json'  
+CACHE_EXPIRATION = 60 
+EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4'] 
 
 HOST = 'localhost'
 PORT = 53
+
+with open('config.json') as f:
+    config = json.load(f)
+
+    dns_servers = config['servers-dns-external']
 
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
     sock.bind((HOST, PORT))
