@@ -8,7 +8,6 @@ CONFIG_FILE = 'config.json'
 CACHE_EXPIRATION = 60 
 EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4'] 
 
-
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
 def check_cache(domain):
