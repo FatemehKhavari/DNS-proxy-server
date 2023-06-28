@@ -43,7 +43,7 @@ def send_dns_request(domain,dns_query_type):
             if sock:
                 sock.close()
     
-
+#hgahjdfhgadfgafg
 def process_dns_request(data, client_address):
     #domain = data.decode().strip()
     dns_query_type = data[-8:] 
