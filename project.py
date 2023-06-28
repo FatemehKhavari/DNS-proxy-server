@@ -1,13 +1,13 @@
-import ipaddress
-import socket
 import json
 import socket
 import threading
 import redis
+import ipaddress
+import struct
 
 CONFIG_FILE = 'config.json'  
 CACHE_EXPIRATION = 60 
-EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4'] 
+EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4']  
 
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
@@ -24,6 +24,15 @@ def send_dns_request(domain,dns_query_type):
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.settimeout(5)
             sock.connect((dns_server, 53))
+            dns_request_data = {
+                "domain": domain.decode(),
+                "dns_query_type": dns_query_type.decode()
+                }
+            json_request_data = json.dumps(dns_request_data).encode()
+            dns_request_data = json.loads(json_request_data)
+            fmt = "!16sH2s"
+            packed_data = struct.pack(fmt, b"\x00" * 16, 1, b"\x00\x01")
+            sock.sendto(packed_data, (dns_server, 53))
             print(domain)
             ip = socket.gethostbyname(domain)
             response=ip
@@ -36,6 +45,7 @@ def send_dns_request(domain,dns_query_type):
     
 
 def process_dns_request(data, client_address):
+    #domain = data.decode().strip()
     dns_query_type = data[-8:] 
     dns_query_type = dns_query_type[1:3]
     data = data[13:]
@@ -78,8 +88,9 @@ def process_dns_request(data, client_address):
 
 
 if __name__ == '__main__':
-    with open('config.json') as f:
-        config = json.load(f)
+
+   with open('config.json') as f:
+    config = json.load(f)
 
     dns_servers = config['servers-dns-external']
 
@@ -87,6 +98,12 @@ if __name__ == '__main__':
     server_socket.bind(('0.0.0.0', 35853))
     print("DNS Proxy Server is running.")
 
+    server_socket.settimeout(10)
 
-    received_data, addr = server_socket.recvfrom(1024)
-    threading.Thread(target=process_dns_request, args=(received_data, addr)).start()  
+    while True:
+        try:
+            received_data, addr = server_socket.recvfrom(1024)
+            threading.Thread(target=process_dns_request, args=(received_data, addr)).start()  
+        except socket.timeout:
+            print("No data received within the timeout period. Stopping the program.")
+            break
