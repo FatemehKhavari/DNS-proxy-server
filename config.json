@@ -1,0 +1,8 @@
+{
+  "time-expiration-cache": 3600,
+  "servers-dns-external": [
+    "8.8.8.8",
+    "1.1.1.1",
+    "208.67.222.222"
+  ]
+}
