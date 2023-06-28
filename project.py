@@ -16,6 +16,20 @@ def check_cache(domain):
 def save_cache(domain, ip):
     cache.set(domain, ip, ex=CACHE_EXPIRATION)
 
+def process_dns_request(domain, client_address):
+    
+    print(f"Received DNS request for domain: {domain}")
+
+    cache_result = check_cache(domain)
+    if cache_result:
+        ip_address = cache_result.decode()
+        print(f"Found in cache: {ip_address}")
+    else:
+        dns_response = send_dns_request(domain).encode()
+
+        response_data = ip_address.encode()
+        server_socket.sendto(response_data, client_address)
+
 
 if __name__ == '__main__':
     with open('config.json') as f:
