@@ -5,24 +5,20 @@ import redis
 import ipaddress
 import struct
 
-CONFIG_FILE = 'config.json'  
-CACHE_EXPIRATION = 60 
-EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4']  
-
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
 def check_cache(domain):
     return cache.get(domain)
 
 def save_cache(domain, ip):
-    cache.set(domain, ip, ex=CACHE_EXPIRATION)
+    cache.set(domain, ip, ex=cache_expiration_time)
 
 def send_dns_request(domain,dns_query_type):
     response = None
     for dns_server in dns_servers:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.settimeout(5)
+            sock.settimeout(cache_expiration_time)
             sock.connect((dns_server, 53))
             dns_request_data = {
                 "domain": domain.decode(),
@@ -87,10 +83,11 @@ def process_dns_request(data, client_address):
 
 if __name__ == '__main__':
 
-   with open('config.json') as f:
-    config = json.load(f)
+    with open('config.json') as f:
+        config = json.load(f)
 
-    dns_servers = config['servers-dns-external']
+    dns_servers = config['external-dns-servers']
+    cache_expiration_time = config['cache-expiration-time']
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.bind(('0.0.0.0', 35853))
