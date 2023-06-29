@@ -66,15 +66,15 @@ def process_dns_request(data, client_address):
         if dns_response:
             if dns_query_type == b'01':  #IPV4
                 ip_address = socket.gethostbyname(dns_response)
-                print("Name: {domain}")
+                print(f"Name: {domain.decode()}")
                 print(f"Address : {ip_address}")
                 save_cache(domain, ip_address) 
             elif dns_query_type == b'28':  #IPV4 and IPV6
                 ipv4_address = socket.gethostbyname(dns_response)
                 ip_address = ipaddress.IPv6Address('2001::' + ipv4_address).compressed
-                print("Name: {domain}")
+                print(f"Name: {domain.decode()}")
                 print(f"Address : {ipv4_address}")
-                print("Name: {domain}")
+                print(f"Name: {domain.decode()}")
                 print(f"Address : {ip_address}")
                 save_cache(domain, ip_address)  
 
