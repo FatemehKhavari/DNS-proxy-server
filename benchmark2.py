@@ -86,7 +86,7 @@ if __name__ == '__main__':
         config = json.load(f)
   
 
-    dns_servers = config['servers-dns-external']
+    dns_servers = config['external-dns-servers']
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.bind(('0.0.0.0', 35853))
