@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 #Benchmark to compare the performance of the DNS proxy and a DNS server
 
+
 CONFIG_FILE = 'config.json'  
 CACHE_EXPIRATION = 60 
 EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4']  
