@@ -4,15 +4,19 @@ import threading
 import redis
 import ipaddress
 
+#Benchmark to send domains in domains.txt to proxy :
+
 CONFIG_FILE = 'config.json'  
 CACHE_EXPIRATION = 60 
 EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4']
 
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
+#Check if the cache has the IP of the donmain
 def check_cache(domain):
     return cache.get(domain)
 
+#Save the domain and its IP to the cache
 def save_cache(domain, ip):
     cache.set(domain, ip, ex=CACHE_EXPIRATION)
 
@@ -20,6 +24,8 @@ def send_dns_request(domain):
     response = None
     for dns_server in EXTERNAL_DNS_SERVERS:
         try:
+            #Create a UDP conncetion
+            #Connect to servers in the config file 
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.settimeout(10)
             sock.sendto(domain, (dns_server, 53))
@@ -34,6 +40,8 @@ def send_dns_request(domain):
     return response
 
 def process_dns_request(data, client_address):
+    #Parse the data
+    #Seperate the domain and the type
     domain = data.encode().strip()
     dns_query_type = domain[-2:]  
     domain = domain[:-3]  
@@ -46,7 +54,8 @@ def process_dns_request(data, client_address):
         print(f"Found '{domain_name}' in cache: {ip_address}")
     else:
         dns_response = send_dns_request(domain)
-        
+    
+    #Find the IPV4 and IPV6 based on the type
         if dns_response:
             if dns_query_type == b'01':  
                 ip_address = socket.gethostbyname(domain_name)
@@ -80,6 +89,7 @@ if __name__ == '__main__':
     server_socket.bind(('0.0.0.0', 35853))
     print("DNS Proxy Server is running.")
 
+    #use domains.txt which contains repeated domains to check the performance of the proxy
     with open('domains.txt', 'r') as f:
         domains = f.readlines()
     for domain in domains:

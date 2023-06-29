@@ -7,10 +7,13 @@ import timeit
 import dns.resolver
 import matplotlib.pyplot as plt
 
+#Benchmark to compare the performance of the DNS proxy and a DNS server
+
 CONFIG_FILE = 'config.json'  
 CACHE_EXPIRATION = 60 
 EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4']  
 
+#save to disk
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
 def check_cache(domain):
@@ -37,6 +40,7 @@ def send_dns_request(domain):
     return response
 
 def process_dns_request(data, client_address):
+    #parse :
     domain = data.encode().strip()
     dns_query_type = domain[-2:]  
     domain = domain[:-3] 
@@ -47,7 +51,7 @@ def process_dns_request(data, client_address):
         ip_address = cache_result.decode()
     else:
         dns_response = send_dns_request(domain)
-        
+        #Find ipv4 and ipv6
         if dns_response:
             if dns_query_type == b'01':  
                 ip_address = socket.gethostbyname(domain_name)
@@ -66,7 +70,7 @@ def process_dns_request(data, client_address):
         server_socket.sendto(response_data, client_address)
 
 
-
+#A function to send the query to a DNS server directly
 def query(name: str, server: str, port: int, rdtype: str):
     resolver2 = dns.resolver.Resolver()
     resolver2.nameserver_ports = {server: port}
@@ -89,12 +93,15 @@ if __name__ == '__main__':
 
     server_socket.settimeout(10)
 
+    #read the domains and save them to arrays:
+
     with open('domains.txt', 'r') as f:
         domains1 = f.read().splitlines()
 
     with open('domains2.txt', 'r') as f:
         domains2 = f.read().splitlines()
 
+    #Time 
     domain_times_without_proxy = 0
     domain_times_with_proxy = 0
     time_proxy_array = [] 
@@ -102,12 +109,14 @@ if __name__ == '__main__':
     
 
     try:
+        #Calculate the time to send and recieve from the proxy (for 100 request)
         for i in range(100):
             received_data = domains1[i]
             start_time = timeit.default_timer()
             threading.Thread(target=process_dns_request, args=(received_data, ('0.0.0.0', 35853))).start()
             end_time = timeit.default_timer()
             domain_times_with_proxy =  domain_times_with_proxy + (end_time - start_time )  
+            #Put it in array for plotting the graph
             time_proxy_array.append(domain_times_with_proxy)   
     except socket.timeout:
         print("No data received within the timeout period. Stopping the program.")
@@ -115,22 +124,25 @@ if __name__ == '__main__':
     print("For 100 requests ( with proxy ) the time is : " )
     print(domain_times_with_proxy) 
 
+    #plot the graph
     plt.plot(time_proxy_array)
     plt.xlabel('Iteration (with proxy)')
     plt.ylabel('Execution Time (s)(with proxy)')
     plt.show()
     
-
+    #Calculate the time to send and recieve from the server without any proxy (for 100 request)
     for i in range(100):
         start_time_without = timeit.default_timer()
         query(domains2[i], '1.1.1.1', 53, 'A')
         end_time_without = timeit.default_timer()
         domain_times_without_proxy =  domain_times_without_proxy + (end_time_without - start_time_without)
+        #Put it in array for plotting the graph
         time_no_proxy_array.append(domain_times_without_proxy)
 
     print("For 100 requests ( without proxy ) the time is : " )
     print(domain_times_without_proxy) 
-
+    
+    #plot the graph
     plt.plot(time_no_proxy_array)
     plt.xlabel('Iteration (without proxy)')
     plt.ylabel('Execution Time (s)(without proxy)')
