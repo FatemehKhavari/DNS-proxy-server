@@ -3,14 +3,12 @@ import socket
 import threading
 import redis
 import ipaddress
-import struct
 import timeit
 import dns.resolver
-import random
 
 CONFIG_FILE = 'config.json'  
 CACHE_EXPIRATION = 60 
-EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4']  # سرورهای DNS خارجی
+EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4'] 
 
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
@@ -38,19 +36,15 @@ def send_dns_request(domain):
     return response
 
 def process_dns_request(data, client_address):
-    # پارس کردن درخواست DNS
     domain = data.encode().strip()
-    dns_query_type = domain[-2:]  # نوع درخواست DNS (آخرین ۲ کاراکتر)
-    domain = domain[:-3]  # نام دامنه بدون نوع درخواست
+    dns_query_type = domain[-2:]
+    domain = domain[:-3]  
     domain_name = domain.decode()
 
-    # جستجو در کش
     cache_result = check_cache(domain)
     if cache_result:
         ip_address = cache_result.decode()
     else:
-        # درخواست به سرور DNS خار
-        # ارسال درخواست به سرور DNS خارجی
         dns_response = send_dns_request(domain)
         
         if dns_response:
@@ -67,7 +61,6 @@ def process_dns_request(data, client_address):
         else:
             ip_address = 'No response from external DNS servers'
         
-        # پاسخ به کلاینت
         response_data = ip_address.encode()
         server_socket.sendto(response_data, client_address)
 
