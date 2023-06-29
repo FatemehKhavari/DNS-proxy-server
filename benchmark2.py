@@ -5,10 +5,11 @@ import redis
 import ipaddress
 import timeit
 import dns.resolver
+import matplotlib.pyplot as plt
 
 CONFIG_FILE = 'config.json'  
 CACHE_EXPIRATION = 60 
-EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4'] 
+EXTERNAL_DNS_SERVERS = ['1.1.1.1','8.8.8.8', '8.8.4.4']  
 
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
@@ -37,8 +38,8 @@ def send_dns_request(domain):
 
 def process_dns_request(data, client_address):
     domain = data.encode().strip()
-    dns_query_type = domain[-2:]
-    domain = domain[:-3]  
+    dns_query_type = domain[-2:]  
+    domain = domain[:-3] 
     domain_name = domain.decode()
 
     cache_result = check_cache(domain)
@@ -114,7 +115,11 @@ if __name__ == '__main__':
     print("For 100 requests ( with proxy ) the time is : " )
     print(domain_times_with_proxy) 
 
-
+    plt.plot(time_proxy_array)
+    plt.xlabel('Iteration (with proxy)')
+    plt.ylabel('Execution Time (s)(with proxy)')
+    plt.show()
+    
 
     for i in range(100):
         start_time_without = timeit.default_timer()
@@ -126,6 +131,9 @@ if __name__ == '__main__':
     print("For 100 requests ( without proxy ) the time is : " )
     print(domain_times_without_proxy) 
 
-
+    plt.plot(time_no_proxy_array)
+    plt.xlabel('Iteration (without proxy)')
+    plt.ylabel('Execution Time (s)(without proxy)')
+    plt.show()
     
        
