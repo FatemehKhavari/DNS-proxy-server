@@ -7,6 +7,7 @@ import struct
 
 cache = redis.Redis(host='localhost', port=6379, db=0)
 
+
 def check_cache(domain):
     return cache.get(domain)
 
@@ -47,7 +48,6 @@ def process_dns_request(data, client_address):
     data2 = data[0:lenght]
     data1 = b'.' + data[-11:-8]
     domain =data2+data1
-    print(f"Received DNS request for domain: {domain}")
 
     cache_result = check_cache(domain)
     if cache_result:
@@ -56,18 +56,20 @@ def process_dns_request(data, client_address):
     else:
         dns_response = send_dns_request(domain,dns_query_type).encode()
 
-        print("Dns response : ")
-        print(dns_response)
         
         if dns_response:
             if dns_query_type == b'01':  
                 ip_address = socket.gethostbyname(dns_response)
-                print(f"Resolved IP address from external DNS: {ip_address}")
+                print("Name: {domain}")
+                print(f"Address : {ip_address}")
                 save_cache(domain, ip_address) 
             elif dns_query_type == b'28':  
                 ipv4_address = socket.gethostbyname(dns_response)
                 ip_address = ipaddress.IPv6Address('2001::' + ipv4_address).compressed
-                print(f"Resolved IPv6 address from external DNS: {ip_address}")
+                print("Name: {domain}")
+                print(f"Address : {ipv4_address}")
+                print("Name: {domain}")
+                print(f"Address : {ip_address}")
                 save_cache(domain, ip_address)  
 
             else:
